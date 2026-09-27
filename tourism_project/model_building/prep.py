@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Load dataset
-RAW_PATH = "/content/tourism_project/tourism.csv"
+RAW_PATH = "tourism_project/data/tourism.csv"
 df = pd.read_csv(RAW_PATH)
 
 # Drop ID / index columns that have no predictive power
