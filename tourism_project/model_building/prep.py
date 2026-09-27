@@ -3,11 +3,9 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import mlflow
 
-# Set local MLflow tracking server (started by GitHub Actions workflow)
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("file:./mlruns")
 mlflow.set_experiment("mlops-training-experiment")
 
-# Relative path for GitHub Actions workspace
 RAW_PATH = "tourism_project/data/tourism.csv"
 
 if not os.path.exists(RAW_PATH):
@@ -15,7 +13,6 @@ if not os.path.exists(RAW_PATH):
 
 df = pd.read_csv(RAW_PATH)
 
-# Drop index/identifier columns if present
 cols_to_drop = [col for col in ["Unnamed: 0", "CustomerID"] if col in df.columns]
 df = df.drop(columns=cols_to_drop)
 
@@ -30,13 +27,12 @@ Xtrain, Xtest, ytrain, ytest = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# Save preprocessed splits to workspace root for downstream jobs
 Xtrain.to_csv("Xtrain.csv", index=False)
 Xtest.to_csv("Xtest.csv", index=False)
 ytrain.to_csv("ytrain.csv", index=False)
 ytest.to_csv("ytest.csv", index=False)
 
-print("Data preparation complete. Saved Xtrain, Xtest, ytrain, ytest CSVs.")
+print("Data preparation complete. Saved split CSVs.")
 
 with mlflow.start_run(run_name="data_preparation"):
     mlflow.log_metric("train_samples", Xtrain.shape[0])
