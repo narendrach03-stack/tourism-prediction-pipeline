@@ -5,8 +5,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  run_pipeline:
+  register_dataset:
+    name: Register Dataset
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -20,20 +24,66 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r tourism_project/requirements.txt
+          pip install --no-cache-dir -r tourism_project/requirements.txt
 
-      - name: Start MLflow Server
-        run: |
-          mlflow server --host 127.0.0.1 --port 5000 &
-          sleep 5
-
-      - name: Step 1 - Data Registration
+      - name: Run Data Registration
         run: python tourism_project/model_building/data_register.py
 
-      - name: Step 2 - Data Preparation
+  data_prep:
+    name: Data Preparation
+    needs: register_dataset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r tourism_project/requirements.txt
+
+      - name: Run Preprocessing
         run: python tourism_project/model_building/prep.py
 
-      - name: Step 3 - Model Training
+      - name: Upload Processed Datasets as Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-data
+          path: |
+            Xtrain.csv
+            Xtest.csv
+            ytrain.csv
+            ytest.csv
+
+  model_training:
+    name: Model Training
+    needs: data_prep
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r tourism_project/requirements.txt
+
+      - name: Download Processed Datasets
+        uses: actions/download-artifact@v4
+        with:
+          name: processed-data
+
+      - name: Train & Log Model
         run: python tourism_project/model_building/train.py
 
       - name: Commit Trained Model back to Main
