@@ -1,4 +1,5 @@
 name: Tourism MLOps CI/CD Pipeline
+run-name: Wellness Tourism Package Prediction Pipeline Run
 
 on:
   push:
