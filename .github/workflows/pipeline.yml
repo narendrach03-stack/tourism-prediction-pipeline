@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  register_dataset:
+  run_pipeline:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -21,68 +21,19 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r tourism_project/requirements.txt
-
-      - name: Run Data Registration
-        run: python tourism_project/model_building/data_register.py
-
-  data_prep:
-    needs: register_dataset
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r tourism_project/requirements.txt
-
-      - name: Run Preprocessing
-        run: python tourism_project/model_building/prep.py
-
-      - name: Upload Processed Datasets as Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: processed-data
-          path: |
-            Xtrain.csv
-            Xtest.csv
-            ytrain.csv
-            ytest.csv
-
-  model_training:
-    needs: data_prep
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r tourism_project/requirements.txt
-
-      - name: Download Processed Datasets
-        uses: actions/download-artifact@v4
-        with:
-          name: processed-data
 
       - name: Start MLflow Server
         run: |
           mlflow server --host 127.0.0.1 --port 5000 &
           sleep 5
 
-      - name: Train & Log Model
+      - name: Step 1 - Data Registration
+        run: python tourism_project/model_building/data_register.py
+
+      - name: Step 2 - Data Preparation
+        run: python tourism_project/model_building/prep.py
+
+      - name: Step 3 - Model Training
         run: python tourism_project/model_building/train.py
 
       - name: Commit Trained Model back to Main
